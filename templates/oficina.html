@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block largura %}{% endblock %}
+{% block conteudo %}
+<h1>Dados da oficina</h1>
+{% if salvo %}<div class="aviso-ok">Dados salvos.</div>{% endif %}
+{% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+<form method="post">
+{% include "_campos_oficina.html" %}
+  <button class="botao principal" type="submit">Salvar</button>
+</form>
+<a class="botao" href="{{ url_for('inicio') }}">Voltar ao início</a>
+{% endblock %}

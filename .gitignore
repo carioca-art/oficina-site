@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+oficina.db
+oficina.db-*
+backups/
+fotos/
+chave_secreta.txt
+.env

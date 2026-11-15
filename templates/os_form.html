@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>{{ 'Mudar a ordem nº %04d'|format(os.id) if os.id else 'Nova ordem de serviço' }}</h1>
+
+<form method="post" action="{{ url_for('salvar_os') }}" id="form-os">
+  <input type="hidden" name="id" value="{{ os.id or '' }}">
+  <input type="hidden" name="cliente_id" id="cliente_id" value="{{ os.cliente_id or '' }}">
+  <input type="hidden" name="veiculo_id" id="veiculo_id" value="{{ os.veiculo_id or '' }}">
+
+  <div class="grade-2">
+  <fieldset>
+    <legend>Cliente</legend>
+    <label for="nome">Nome do cliente</label>
+    <input id="nome" name="nome" value="{{ os.nome }}" autocomplete="off" required>
+    <p class="dica">Escreva o começo do nome. Se ele já veio antes, aparece embaixo pra você tocar.</p>
+    <div class="sugestoes" id="sugestoes"></div>
+    <label for="telefone">Telefone</label>
+    <input id="telefone" name="telefone" inputmode="tel" value="{{ os.telefone }}">
+    <label for="endereco">Endereço</label>
+    <input id="endereco" name="endereco" value="{{ os.endereco }}">
+  </fieldset>
+
+  <fieldset>
+    <legend>Veículo</legend>
+    <div class="veiculos-cliente" id="veiculos-cliente"></div>
+    <div class="lado-a-lado">
+      <div><label for="marca">Marca</label><input id="marca" name="marca" value="{{ os.marca or '' }}"></div>
+      <div><label for="modelo">Modelo</label><input id="modelo" name="modelo" value="{{ os.modelo or '' }}"></div>
+    </div>
+    <div class="lado-a-lado">
+      <div><label for="ano">Ano</label><input id="ano" name="ano" inputmode="numeric" value="{{ os.ano or '' }}"></div>
+      <div><label for="placa">Placa</label><input id="placa" name="placa" value="{{ os.placa or '' }}" style="text-transform:uppercase"></div>
+    </div>
+  </fieldset>
+  </div>
+
+  <fieldset>
+    <legend>O serviço</legend>
+    <div class="grade-2"><div>
+    <label for="defeito">O que o cliente reclamou</label>
+    <textarea id="defeito" name="defeito">{{ os.defeito }}</textarea>
+    </div><div>
+    <label for="servico">O que foi feito</label>
+    <textarea id="servico" name="servico">{{ os.servico }}</textarea>
+    </div></div>
+    <div style="max-width:420px"><label for="data">Data</label>
+    <input id="data" name="data" type="date" value="{{ os.data }}"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Peças</legend>
+    <div class="cabeca-pecas"><span>Peça</span><span>Quantidade</span><span>Preço de cada uma</span><span></span></div>
+    <div id="pecas">
+      {% for item in os.itens %}
+      <div class="peca">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <label>Peça</label><input name="item_descricao" value="{{ item.descricao }}">
+        <div class="linha">
+          <div><label>Quantidade</label><input name="item_quantidade" inputmode="decimal" value="{{ item.quantidade|qtd }}"></div>
+          <div><label>Preço de cada uma</label><input name="item_preco" inputmode="decimal" value="{{ '%.2f'|format(item.preco)|replace('.', ',') }}"></div>
+        </div>
+        <button type="button" class="botao pequeno tirar">Tirar esta peça</button>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="botao escuro" id="mais-peca">Colocar mais uma peça</button>
+
+    <div class="mao-de-obra"><label for="mao_de_obra">Mão de obra (R$)</label>
+    <input id="mao_de_obra" name="mao_de_obra" inputmode="decimal" value="{{ ('%.2f'|format(os.mao_de_obra))|replace('.', ',') if os.mao_de_obra else '' }}"></div>
+  </fieldset>
+
+  <div class="grade-2">
+  <div class="total-ao-vivo"><span>Total</span><span id="total">R$ 0,00</span></div>
+
+  <fieldset>
+    <legend>Pagamento</legend>
+    <div class="escolha" role="radiogroup">
+      <input type="radio" name="status" id="st-pendente" value="PENDENTE" {{ 'checked' if os.status == 'PENDENTE' }}>
+      <label for="st-pendente">Ainda não pagou</label>
+      <input type="radio" name="status" id="st-pago" value="PAGO" {{ 'checked' if os.status == 'PAGO' }}>
+      <label for="st-pago">Já pagou tudo</label>
+      <input type="radio" name="status" id="st-parcial" value="PARCIAL" {{ 'checked' if os.status == 'PARCIAL' }}>
+      <label for="st-parcial">Pagou só uma parte</label>
+    </div>
+    <div id="bloco-parcial">
+      <label for="valor_pago">Quanto ele já pagou (R$)</label>
+      <input id="valor_pago" name="valor_pago" inputmode="decimal" value="{{ ('%.2f'|format(os.valor_pago))|replace('.', ',') if os.valor_pago else '' }}">
+    </div>
+    <div id="bloco-forma">
+      <label for="forma_pagamento">Como pagou</label>
+      <select id="forma_pagamento" name="forma_pagamento">
+        {% for forma in formas %}<option {{ 'selected' if os.forma_pagamento == forma }}>{{ forma }}</option>{% endfor %}
+      </select>
+    </div>
+  </fieldset>
+  </div>
+
+  <div class="acoes">
+  <button class="botao principal" type="submit">Salvar</button>
+  <a class="botao" href="{{ url_for('ver_os', ordem_id=os.id) if os.id else url_for('inicio') }}">Cancelar e voltar</a>
+  </div>
+</form>
+
+<template id="modelo-peca">
+  <div class="peca">
+    <input type="hidden" name="item_id" value="">
+    <label>Peça</label><input name="item_descricao" placeholder="Ex.: filtro de óleo">
+    <div class="linha">
+      <div><label>Quantidade</label><input name="item_quantidade" inputmode="decimal" value="1"></div>
+      <div><label>Preço de cada uma</label><input name="item_preco" inputmode="decimal" placeholder="0,00"></div>
+    </div>
+    <button type="button" class="botao pequeno tirar">Tirar esta peça</button>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  function num(t) {
+    t = (t || '').replace('R$', '').trim();
+    if (!t) return 0;
+    if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+    var n = parseFloat(t); return isNaN(n) ? 0 : n;
+  }
+  function reais(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+  // peças e total
+  var pecas = document.getElementById('pecas');
+  function somar() {
+    var total = num(document.getElementById('mao_de_obra').value);
+    pecas.querySelectorAll('.peca').forEach(function (p) {
+      var q = num(p.querySelector('[name=item_quantidade]').value) || 1;
+      total += q * num(p.querySelector('[name=item_preco]').value);
+    });
+    document.getElementById('total').textContent = reais(total);
+  }
+  function novaPeca(focar) {
+    var nova = document.getElementById('modelo-peca').content.firstElementChild.cloneNode(true);
+    pecas.appendChild(nova);
+    if (focar) nova.querySelector('input').focus();
+  }
+  document.getElementById('mais-peca').addEventListener('click', function () { novaPeca(true); });
+  pecas.addEventListener('click', function (e) {
+    if (e.target.classList.contains('tirar')) {
+      var p = e.target.closest('.peca');
+      var nome = p.querySelector('[name=item_descricao]').value;
+      if (!nome || confirm('Tirar a peça "' + nome + '"?')) { p.remove(); somar(); }
+    }
+  });
+  document.getElementById('form-os').addEventListener('input', somar);
+  if (!pecas.children.length) novaPeca(false);
+  somar();
+
+  // pagamento
+  function mostrarPagamento() {
+    var st = document.querySelector('[name=status]:checked').value;
+    document.getElementById('bloco-parcial').hidden = st !== 'PARCIAL';
+    document.getElementById('bloco-forma').hidden = st === 'PENDENTE';
+  }
+  document.querySelectorAll('[name=status]').forEach(function (r) { r.addEventListener('change', mostrarPagamento); });
+  mostrarPagamento();
+
+  // cliente que já veio antes
+  var nome = document.getElementById('nome');
+  var caixa = document.getElementById('sugestoes');
+  var veiculosCaixa = document.getElementById('veiculos-cliente');
+  var espera;
+  function texto(el, valor) { el.textContent = valor || ''; return el; }
+
+  function mostrarVeiculos(lista) {
+    veiculosCaixa.innerHTML = '';
+    if (!lista.length) return;
+    veiculosCaixa.appendChild(texto(document.createElement('p'), 'Toque no veículo, se for um destes:'));
+    lista.forEach(function (v) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.appendChild(texto(document.createElement('span'), [v.marca, v.modelo, v.ano].filter(Boolean).join(' ')));
+      if (v.placa) b.appendChild(texto(document.createElement('small'), 'Placa ' + v.placa));
+      b.addEventListener('click', function () {
+        document.getElementById('veiculo_id').value = v.id;
+        ['marca', 'modelo', 'ano', 'placa'].forEach(function (k) { document.getElementById(k).value = v[k] || ''; });
+        veiculosCaixa.innerHTML = '';
+        veiculosCaixa.appendChild(texto(document.createElement('p'), 'Veículo escolhido.'));
+      });
+      veiculosCaixa.appendChild(b);
+    });
+  }
+
+  nome.addEventListener('input', function () {
+    document.getElementById('cliente_id').value = '';
+    document.getElementById('veiculo_id').value = '';
+    veiculosCaixa.innerHTML = '';
+    clearTimeout(espera);
+    var termo = nome.value.trim();
+    if (termo.length < 2) { caixa.innerHTML = ''; return; }
+    espera = setTimeout(function () {
+      fetch('/api/clientes?q=' + encodeURIComponent(termo)).then(function (r) { return r.json(); }).then(function (lista) {
+        caixa.innerHTML = '';
+        lista.forEach(function (c) {
+          var b = document.createElement('button'); b.type = 'button';
+          b.appendChild(texto(document.createElement('span'), c.nome));
+          if (c.telefone) b.appendChild(texto(document.createElement('small'), c.telefone));
+          b.addEventListener('click', function () {
+            document.getElementById('cliente_id').value = c.id;
+            nome.value = c.nome;
+            document.getElementById('telefone').value = c.telefone || '';
+            document.getElementById('endereco').value = c.endereco || '';
+            caixa.innerHTML = '';
+            mostrarVeiculos(c.veiculos);
+          });
+          caixa.appendChild(b);
+        });
+      });
+    }, 250);
+  });
+
+  // placa mudou na mão = carro diferente do escolhido
+  document.getElementById('placa').addEventListener('input', function () {
+    document.getElementById('veiculo_id').value = '';
+  });
+
+  // não deixa perder o que digitou sem querer
+  var mexeu = false, salvando = false;
+  document.getElementById('form-os').addEventListener('input', function () { mexeu = true; });
+  document.getElementById('form-os').addEventListener('submit', function () { salvando = true; });
+  window.addEventListener('beforeunload', function (e) { if (mexeu && !salvando) { e.preventDefault(); e.returnValue = ''; } });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Clientes</h1>
+<label for="filtro">Procurar na lista</label>
+<input id="filtro" type="search" placeholder="Escreva o nome" autocomplete="off">
+<p class="dica">{{ clientes|length }} {{ 'cliente cadastrado' if clientes|length == 1 else 'clientes cadastrados' }}</p>
+{% if not clientes %}<p>Nenhum cliente ainda. Eles aparecem aqui depois da primeira ordem de serviço.</p>{% endif %}
+<div class="lista-os" id="lista">
+{% for c in clientes %}
+<a class="cartao-os" href="{{ url_for('ver_cliente', cliente_id=c.id) }}" data-busca="{{ (c.nome ~ ' ' ~ (c.telefone or ''))|lower }}">
+  <div class="nome">{{ c.nome }}</div>
+  <div class="telefone">{{ c.telefone or 'Sem telefone' }}</div>
+  {% for v in c.veiculos %}<div class="linha2">{{ [v.marca, v.modelo]|select|join(' ') }}{% if v.placa %}, placa {{ v.placa }}{% endif %}</div>{% endfor %}
+  <div class="rodape">
+    <span>{{ c.qtd_os }} {{ 'serviço' if c.qtd_os == 1 else 'serviços' }}</span>
+    {% if c.deve %}<span class="selo PENDENTE">Deve {{ c.deve|dinheiro }}</span>{% endif %}
+  </div>
+</a>
+{% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('filtro').addEventListener('input', function () {
+  var termo = this.value.trim().toLowerCase();
+  document.querySelectorAll('#lista .cartao-os').forEach(function (c) {
+    c.hidden = termo && c.dataset.busca.indexOf(termo) === -1;
+  });
+});
+</script>
+{% endblock %}

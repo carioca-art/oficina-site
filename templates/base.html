@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.json">
+  <title>{% block titulo %}{{ oficina_nome }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra.css') }}">
+</head>
+<body>
+  {% if session.get('dentro') %}
+  <header class="topo"><div class="topo-dentro">
+    <a href="{{ url_for('inicio') }}" class="marca">{{ oficina_nome }}</a>
+    {% if request.endpoint != 'inicio' %}<a href="{{ url_for('inicio') }}">Voltar ao início</a>{% endif %}
+  </div></header>
+  {% endif %}
+  <main class="{% block largura %}largo{% endblock %}">{% block conteudo %}{% endblock %}</main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

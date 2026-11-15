@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Quem ainda deve</h1>
+<div class="resumo">
+  <div>Total pra receber</div>
+  <div class="grande">{{ total|dinheiro }}</div>
+</div>
+{% if not resultados %}<p>Ninguém está devendo.</p>{% endif %}
+<div class="lista-os">{% for o in resultados %}{% include "_cartao_os.html" %}{% endfor %}</div>
+{% endblock %}

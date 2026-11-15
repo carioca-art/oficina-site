@@ -1,0 +1,27 @@
+  <label for="oficina_nome">Nome da oficina</label>
+  <input id="oficina_nome" name="oficina_nome" value="{{ o.oficina_nome or '' }}" required>
+
+  <fieldset>
+    <legend>Primeiro telefone</legend>
+    <div class="lado-a-lado">
+      <div><label for="oficina_tel1_nome">De quem é</label>
+      <input id="oficina_tel1_nome" name="oficina_tel1_nome" value="{{ o.oficina_tel1_nome or '' }}" placeholder="Ex.: Zé"></div>
+      <div><label for="oficina_telefone">Número</label>
+      <input id="oficina_telefone" name="oficina_telefone" inputmode="tel" value="{{ o.oficina_telefone or '' }}"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Segundo telefone</legend>
+    <div class="lado-a-lado">
+      <div><label for="oficina_tel2_nome">De quem é</label>
+      <input id="oficina_tel2_nome" name="oficina_tel2_nome" value="{{ o.oficina_tel2_nome or '' }}"></div>
+      <div><label for="oficina_telefone2">Número</label>
+      <input id="oficina_telefone2" name="oficina_telefone2" inputmode="tel" value="{{ o.oficina_telefone2 or '' }}"></div>
+    </div>
+    <p class="dica">Se só tiver um telefone, deixe este em branco.</p>
+  </fieldset>
+
+  <label for="oficina_endereco">Endereço da oficina</label>
+  <input id="oficina_endereco" name="oficina_endereco" value="{{ o.oficina_endereco or '' }}">
+  <p class="dica">O nome, os telefones e o endereço aparecem no topo do papel que vai pro cliente.</p>

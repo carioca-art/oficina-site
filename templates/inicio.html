@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<div class="inicio">
+<a class="botao principal" href="{{ url_for('nova_os') }}">Nova ordem de serviço</a>
+<div class="lado">
+
+<form action="{{ url_for('buscar') }}" method="get">
+  <label for="q">Procurar cliente, placa ou carro</label>
+  <input id="q" name="q" type="search" placeholder="Ex.: João, ABC1D23, Scania" autocomplete="off">
+  <button class="botao escuro" type="submit">Procurar</button>
+</form>
+
+<a class="botao" href="{{ url_for('clientes') }}">Lista de clientes</a>
+
+<a class="botao" href="{{ url_for('receber') }}">
+  {% if qtd_receber %}
+    Quem ainda deve: {{ qtd_receber }} {{ 'serviço' if qtd_receber == 1 else 'serviços' }}, {{ valor_receber|dinheiro }}
+  {% else %}
+    Ninguém está devendo
+  {% endif %}
+</a>
+</div>
+</div>
+
+<div class="rodape-inicio">
+<a class="botao pequeno" href="{{ url_for('oficina') }}">Dados da oficina e telefones</a>
+<a class="botao pequeno" href="{{ url_for('baixar_copia') }}">Baixar cópia de segurança dos dados</a>
+</div>
+<p class="dica centro">Faça isso toda semana e guarde o arquivo no computador ou no Google Drive.</p>
+<p class="centro" style="margin-top:1.5rem"><a href="{{ url_for('sair') }}" style="color:#000">Sair do sistema</a></p>
+{% endblock %}

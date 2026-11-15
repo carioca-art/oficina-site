@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block conteudo %}
+{% if salvo %}<div class="aviso-ok">Ordem salva.</div>{% endif %}
+{% if aviso == 'foto' %}<div class="aviso-ok">Foto salva.</div>{% endif %}
+{% if aviso == 'pago' %}<div class="aviso-ok">Pagamento anotado.</div>{% endif %}
+{% if aviso == 'valor' %}<div class="erro">Escreva quanto ele pagou antes de tocar em "Pagou só uma parte".</div>{% endif %}
+<h1>Ordem nº {{ '%04d'|format(os.id) }}</h1>
+<div class="ver-os">
+<div class="coluna-acoes">
+
+<a class="botao principal" href="{{ url_for('pdf_os', ordem_id=os.id) }}" target="_blank">Abrir papel pra imprimir</a>
+<button class="botao escuro" type="button" id="enviar">Mandar pelo WhatsApp</button>
+<p class="dica" id="dica-enviar" hidden></p>
+
+<div class="resumo">
+  <div>Total</div>
+  <div class="grande">{{ os.total|dinheiro }}</div>
+  {% if os.status == 'PAGO' %}<span class="selo PAGO">Pago{% if os.forma_pagamento %} em {{ os.forma_pagamento }}{% endif %}</span>
+  {% elif os.status == 'PARCIAL' %}<span class="selo PARCIAL">Pagou {{ os.valor_pago|dinheiro }}, falta {{ os.falta|dinheiro }}</span>
+  {% else %}<span class="selo PENDENTE">Ainda não pagou</span>{% endif %}
+</div>
+
+{% if os.status != 'PAGO' %}
+<form method="post" action="{{ url_for('registrar_pagamento', ordem_id=os.id) }}" class="resumo">
+  <h2 style="margin-top:0">Ele pagou?</h2>
+  <label for="forma_pagamento">Como pagou</label>
+  <select id="forma_pagamento" name="forma_pagamento">
+    {% for forma in formas %}{% if forma != 'Fiado' %}<option>{{ forma }}</option>{% endif %}{% endfor %}
+  </select>
+  <button class="botao verde" type="submit" name="tipo" value="tudo">Pagou tudo ({{ os.falta|dinheiro }})</button>
+  <label for="valor">Ou, se pagou só uma parte, quanto pagou agora (R$)</label>
+  <input id="valor" name="valor" inputmode="decimal" placeholder="Ex.: 200,00">
+  <button class="botao" type="submit" name="tipo" value="parte">Pagou só uma parte</button>
+</form>
+{% endif %}
+</div>
+<div class="coluna-info">
+<dl class="detalhe">
+  <dt>Cliente</dt><dd><a href="{{ url_for('ver_cliente', cliente_id=os.cliente_id) }}" style="color:#000">{{ os.nome }}</a></dd>
+  <dt>Telefone</dt><dd class="telefone">{% if os.telefone %}<a href="tel:{{ os.telefone }}">{{ os.telefone }}</a>{% else %}Não cadastrado{% endif %}</dd>
+  {% if os.endereco %}<dt>Endereço</dt><dd>{{ os.endereco }}</dd>{% endif %}
+  {% if os.marca or os.modelo or os.placa %}
+  <dt>Veículo</dt><dd>{{ [os.marca, os.modelo, os.ano]|select|join(' ') }}{% if os.placa %}, placa {{ os.placa }}{% endif %}</dd>
+  {% endif %}
+  <dt>Data</dt><dd>{{ os.data|data_br }}</dd>
+  {% if os.defeito %}<dt>O que o cliente reclamou</dt><dd>{{ os.defeito }}</dd>{% endif %}
+  {% if os.servico %}<dt>O que foi feito</dt><dd>{{ os.servico }}</dd>{% endif %}
+</dl>
+
+{% if os.itens or os.mao_de_obra %}
+<h2>Peças</h2>
+{% for item in os.itens %}
+<div class="peca-ver">
+  <strong>{{ item.descricao }}</strong><br>
+  {{ item.quantidade|qtd }} x {{ item.preco|dinheiro }} = {{ (item.quantidade * item.preco)|dinheiro }}
+</div>
+{% endfor %}
+{% if os.mao_de_obra %}<div class="peca-ver"><strong>Mão de obra</strong><br>{{ os.mao_de_obra|dinheiro }}</div>{% endif %}
+{% endif %}
+
+<h2>Mais opções</h2>
+<a class="botao" href="{{ url_for('editar_os', ordem_id=os.id) }}">Mudar alguma coisa nesta ordem</a>
+<a class="botao" href="{{ url_for('inicio') }}">Voltar ao início</a>
+<a class="botao pequeno perigo" href="{{ url_for('apagar_os', ordem_id=os.id) }}">Apagar esta ordem</a>
+</div>
+</div>
+{% include "_fotos_os.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('enviar').addEventListener('click', function () {
+  var url = '{{ url_for("pdf_os", ordem_id=os.id) }}';
+  var nomeArquivo = 'OS-{{ "%04d"|format(os.id) }}.pdf';
+  var dica = document.getElementById('dica-enviar');
+  fetch(url).then(function (r) { return r.blob(); }).then(function (blob) {
+    var arquivo = new File([blob], nomeArquivo, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+      return navigator.share({ files: [arquivo], title: 'Ordem de serviço' }).catch(function () {});
+    }
+    // computador: baixa o arquivo e abre o WhatsApp Web
+    var a = document.createElement('a');
+    a.href = url + '?baixar=1'; a.download = nomeArquivo; document.body.appendChild(a); a.click(); a.remove();
+    dica.hidden = false;
+    dica.textContent = 'O papel foi salvo na pasta Downloads. Abra o WhatsApp e anexe o arquivo ' + nomeArquivo + '.';
+  });
+});
+</script>
+{% endblock %}

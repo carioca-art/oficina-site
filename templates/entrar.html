@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block largura %}{% endblock %}
+{% block conteudo %}
+<h1 class="centro">{{ oficina_nome }}</h1>
+{% if bloqueado %}
+  <div class="erro">Muitas senhas erradas. Espere {{ bloqueado }} {{ 'minuto' if bloqueado == 1 else 'minutos' }} e tente de novo.</div>
+  <a class="botao" href="{{ url_for('entrar') }}">Tentar de novo</a>
+{% else %}
+  <p class="centro">Digite sua senha de 4 números</p>
+  {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+  <form method="post" id="form-senha">
+    <input type="hidden" name="senha" id="senha">
+    <div class="bolinhas" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="teclado">
+      {% for n in [1,2,3,4,5,6,7,8,9] %}<button type="button" data-n="{{ n }}">{{ n }}</button>{% endfor %}
+      <button type="button" class="apagar" id="apagar">Apagar</button>
+      <button type="button" data-n="0">0</button>
+      <span></span>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var campo = document.getElementById('senha');
+  if (!campo) return;
+  var bolinhas = document.querySelectorAll('.bolinhas span');
+  function mostrar() {
+    bolinhas.forEach(function (b, i) { b.classList.toggle('cheia', i < campo.value.length); });
+  }
+  document.querySelectorAll('[data-n]').forEach(function (botao) {
+    botao.addEventListener('click', function () {
+      if (campo.value.length >= 4) return;
+      campo.value += botao.dataset.n;
+      mostrar();
+      if (campo.value.length === 4) setTimeout(function () { document.getElementById('form-senha').submit(); }, 150);
+    });
+  });
+  document.getElementById('apagar').addEventListener('click', function () {
+    campo.value = campo.value.slice(0, -1); mostrar();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (/^[0-9]$/.test(e.key)) { var b = document.querySelector('[data-n="' + e.key + '"]'); if (b) b.click(); }
+    if (e.key === 'Backspace') document.getElementById('apagar').click();
+  });
+})();
+</script>
+{% endblock %}

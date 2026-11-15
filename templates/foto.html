@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>{{ tipo_nome }}{% if item %}: {{ item.descricao }}{% endif %}</h1>
+
+<div class="ferramentas" role="group" aria-label="O que fazer na foto">
+  <button type="button" class="botao ferramenta ativa" data-ferramenta="circulo">Fazer círculo</button>
+  <button type="button" class="botao ferramenta" data-ferramenta="texto">Escrever na foto</button>
+  <button type="button" class="botao" id="desfazer">Desfazer</button>
+</div>
+<div class="cores" role="group" aria-label="Cor">
+  <span>Cor:</span>
+  <button type="button" class="botao cor ativa" data-cor="#e00000">Vermelho</button>
+  <button type="button" class="botao cor" data-cor="#ffd000">Amarelo</button>
+</div>
+<div id="caixa-texto" hidden>
+  <label for="texto-foto">Escreva aqui e depois toque na foto onde o texto vai ficar</label>
+  <input id="texto-foto" autocomplete="off" placeholder="Ex.: rachado aqui">
+</div>
+<p class="dica" id="dica-desenho">Arraste o dedo na foto em volta do problema pra fazer o círculo.</p>
+
+<div class="area-foto"><canvas id="tela" aria-label="Foto"></canvas></div>
+
+<label for="problema">{{ 'Qual o problema desta peça?' if foto.tipo == 'antiga' else 'Anotação sobre esta foto' }}</label>
+<textarea id="problema">{{ foto.problema }}</textarea>
+
+<div class="acoes">
+  <button type="button" class="botao principal" id="salvar" disabled>Salvar</button>
+  <a class="botao" href="{{ url_for('ver_os', ordem_id=foto.ordem_id) }}#fotos">Voltar sem salvar</a>
+</div>
+<div id="erro-salvar" class="erro" hidden>Não deu pra salvar. Verifique a internet e tente de novo.</div>
+
+<button type="button" class="botao pequeno perigo" id="quero-apagar" style="margin-top:2rem">Apagar esta foto</button>
+<form method="post" action="{{ url_for('apagar_foto', foto_id=foto.id) }}" id="confirmar-apagar" class="resumo" hidden>
+  <p><strong>Tem certeza que quer apagar esta foto?</strong> Não tem como voltar.</p>
+  <button class="botao perigo" type="submit">Sim, apagar</button>
+  <button class="botao" type="button" id="nao-apagar">Não, voltar</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var tela = document.getElementById('tela');
+  var ctx = tela.getContext('2d');
+  var foto = new Image();
+  var marcas = JSON.parse({{ foto.anotacoes|tojson }});
+  var ferramenta = 'circulo', cor = '#e00000', rascunho = null;
+
+  function grossura() { return Math.max(4, Math.round(tela.width / 160)); }
+
+  function desenharMarca(m) {
+    ctx.strokeStyle = m.cor; ctx.fillStyle = m.cor;
+    if (m.t === 'c') {
+      ctx.lineWidth = grossura();
+      ctx.beginPath();
+      ctx.ellipse((m.x1 + m.x2) / 2, (m.y1 + m.y2) / 2, Math.abs(m.x2 - m.x1) / 2, Math.abs(m.y2 - m.y1) / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (m.t === 't') {
+      var tamanho = Math.round(tela.width / 18);
+      ctx.font = 'bold ' + tamanho + 'px Verdana, Arial, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = Math.max(3, tamanho / 6);
+      ctx.strokeStyle = m.cor === '#ffd000' ? '#000' : '#fff';
+      ctx.strokeText(m.texto, m.x, m.y);
+      ctx.fillText(m.texto, m.x, m.y);
+    }
+  }
+  function redesenhar() {
+    ctx.drawImage(foto, 0, 0, tela.width, tela.height);
+    marcas.forEach(desenharMarca);
+    if (rascunho) desenharMarca(rascunho);
+  }
+  function ponto(e) {
+    var r = tela.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * tela.width / r.width, y: (e.clientY - r.top) * tela.height / r.height };
+  }
+
+  foto.onload = function () {
+    tela.width = foto.naturalWidth; tela.height = foto.naturalHeight;
+    redesenhar();
+    document.getElementById('salvar').disabled = false;
+  };
+  foto.src = '{{ url_for("ver_foto", foto_id=foto.id, original=1) }}';
+
+  tela.addEventListener('pointerdown', function (e) {
+    var p = ponto(e);
+    if (ferramenta === 'texto') {
+      var texto = document.getElementById('texto-foto').value.trim();
+      if (!texto) { document.getElementById('texto-foto').focus(); return; }
+      marcas.push({ t: 't', x: p.x, y: p.y, texto: texto, cor: cor });
+      document.getElementById('texto-foto').value = '';
+      redesenhar();
+      return;
+    }
+    tela.setPointerCapture(e.pointerId);
+    rascunho = { t: 'c', x1: p.x, y1: p.y, x2: p.x, y2: p.y, cor: cor };
+  });
+  tela.addEventListener('pointermove', function (e) {
+    if (!rascunho) return;
+    var p = ponto(e); rascunho.x2 = p.x; rascunho.y2 = p.y; redesenhar();
+  });
+  function soltar() {
+    if (!rascunho) return;
+    var minimo = tela.width / 40;
+    if (Math.abs(rascunho.x2 - rascunho.x1) > minimo && Math.abs(rascunho.y2 - rascunho.y1) > minimo) marcas.push(rascunho);
+    rascunho = null; redesenhar();
+  }
+  tela.addEventListener('pointerup', soltar);
+  tela.addEventListener('pointercancel', soltar);
+
+  document.querySelectorAll('.ferramenta').forEach(function (b) {
+    b.addEventListener('click', function () {
+      ferramenta = b.dataset.ferramenta;
+      document.querySelectorAll('.ferramenta').forEach(function (x) { x.classList.toggle('ativa', x === b); });
+      document.getElementById('caixa-texto').hidden = ferramenta !== 'texto';
+      document.getElementById('dica-desenho').textContent = ferramenta === 'texto'
+        ? 'Escreva o texto no campo e depois toque na foto onde ele vai ficar.'
+        : 'Arraste o dedo na foto em volta do problema pra fazer o círculo.';
+      if (ferramenta === 'texto') document.getElementById('texto-foto').focus();
+    });
+  });
+  document.querySelectorAll('.cor').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cor = b.dataset.cor;
+      document.querySelectorAll('.cor').forEach(function (x) { x.classList.toggle('ativa', x === b); });
+    });
+  });
+  document.getElementById('desfazer').addEventListener('click', function () { marcas.pop(); redesenhar(); });
+
+  document.getElementById('salvar').addEventListener('click', function () {
+    var botao = this; botao.disabled = true; botao.textContent = 'Salvando...';
+    rascunho = null; redesenhar();
+    tela.toBlob(function (imagem) {
+      var dados = new FormData();
+      dados.append('problema', document.getElementById('problema').value);
+      dados.append('anotacoes', JSON.stringify(marcas));
+      if (marcas.length) dados.append('marcada', imagem, 'marcada.jpg');
+      fetch(location.pathname, { method: 'POST', body: dados })
+        .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+        .then(function (j) { location.href = j.voltar; })
+        .catch(function () {
+          botao.disabled = false; botao.textContent = 'Salvar';
+          document.getElementById('erro-salvar').hidden = false;
+        });
+    }, 'image/jpeg', 0.9);
+  });
+
+  document.getElementById('quero-apagar').addEventListener('click', function () {
+    document.getElementById('confirmar-apagar').hidden = false; this.hidden = true;
+  });
+  document.getElementById('nao-apagar').addEventListener('click', function () {
+    document.getElementById('confirmar-apagar').hidden = true;
+    document.getElementById('quero-apagar').hidden = false;
+  });
+})();
+</script>
+{% endblock %}

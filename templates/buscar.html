@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<form method="get">
+  <label for="q">Procurar cliente, placa ou carro</label>
+  <div class="barra-busca">
+    <input id="q" name="q" type="search" value="{{ termo }}" autocomplete="off" autofocus>
+    <button class="botao escuro" type="submit">Procurar</button>
+  </div>
+</form>
+{% if termo %}
+  <h2>{{ resultados|length }} {{ 'resultado' if resultados|length == 1 else 'resultados' }} pra "{{ termo }}"</h2>
+  {% if not resultados %}<p>Nada encontrado. Tente só um pedaço do nome ou da placa.</p>{% endif %}
+{% else %}
+  <h2>Últimos serviços</h2>
+  {% if not resultados %}<p>Nenhum serviço ainda. Comece pela tela inicial, em "Nova ordem de serviço".</p>{% endif %}
+{% endif %}
+<div class="lista-os">{% for o in resultados %}{% include "_cartao_os.html" %}{% endfor %}</div>
+{% endblock %}

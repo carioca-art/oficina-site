@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block largura %}{% endblock %}
+{% block conteudo %}
+<h1>Tem certeza que quer apagar?</h1>
+<p>Ordem nº {{ '%04d'|format(os.id) }} de <strong>{{ os.nome }}</strong>, total {{ os.total|dinheiro }}.</p>
+<p>Depois de apagar, não tem como voltar.</p>
+<form method="post">
+  <button class="botao perigo" type="submit">Sim, apagar</button>
+</form>
+<a class="botao principal" href="{{ url_for('ver_os', ordem_id=os.id) }}">Não, voltar</a>
+{% endblock %}

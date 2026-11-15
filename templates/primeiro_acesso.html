@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block largura %}{% endblock %}
+{% block conteudo %}
+<h1>Vamos preparar o sistema</h1>
+<p>Isso só aparece uma vez.</p>
+{% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+<form method="post">
+  {% if pede_codigo %}
+  <label for="codigo">Código de liberação</label>
+  <input id="codigo" name="codigo" inputmode="numeric" autocomplete="off" required>
+  {% endif %}
+  {% with o = request.form %}{% include "_campos_oficina.html" %}{% endwith %}
+  <label for="senha">Crie uma senha de 4 números</label>
+  <input id="senha" name="senha" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required>
+  <label for="repetir">Digite a mesma senha de novo</label>
+  <input id="repetir" name="repetir" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required>
+  <button class="botao principal" type="submit">Começar a usar</button>
+</form>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block conteudo %}
+{% if salvo %}<div class="aviso-ok">Dados do cliente salvos.</div>{% endif %}
+<h1>{{ c.nome }}</h1>
+<div class="ver-os">
+<div class="coluna-acoes">
+  <a class="botao principal" href="{{ url_for('nova_os', cliente=c.id) }}">Nova ordem pra este cliente</a>
+  {% if c.deve %}
+  <div class="resumo"><div>Está devendo</div><div class="grande">{{ c.deve|dinheiro }}</div></div>
+  {% endif %}
+  {% if editar %}
+  <form method="post" class="resumo">
+    <label for="nome" style="margin-top:0">Nome</label>
+    <input id="nome" name="nome" value="{{ c.nome }}" required>
+    <label for="telefone">Telefone</label>
+    <input id="telefone" name="telefone" inputmode="tel" value="{{ c.telefone or '' }}">
+    <label for="endereco">Endereço</label>
+    <input id="endereco" name="endereco" value="{{ c.endereco or '' }}">
+    <label for="observacoes">Anotações</label>
+    <textarea id="observacoes" name="observacoes">{{ c.observacoes or '' }}</textarea>
+    <button class="botao principal" type="submit" style="min-height:80px">Salvar</button>
+    <a class="botao" href="{{ url_for('ver_cliente', cliente_id=c.id) }}">Cancelar</a>
+  </form>
+  {% endif %}
+</div>
+<div class="coluna-info">
+  <dl class="detalhe">
+    <dt>Telefone</dt>
+    <dd class="telefone">{% if c.telefone %}<a href="tel:{{ c.telefone }}">{{ c.telefone }}</a>{% else %}Não cadastrado{% endif %}</dd>
+    <dt>Endereço</dt><dd>{{ c.endereco or 'Não cadastrado' }}</dd>
+    {% if c.observacoes %}<dt>Anotações</dt><dd>{{ c.observacoes }}</dd>{% endif %}
+    <dt>Veículos</dt>
+    <dd>{% for v in c.veiculos %}{{ [v.marca, v.modelo, v.ano]|select|join(' ') }}{% if v.placa %}, placa {{ v.placa }}{% endif %}<br>{% else %}Nenhum{% endfor %}</dd>
+  </dl>
+  {% if not editar %}<a class="botao" href="{{ url_for('ver_cliente', cliente_id=c.id, editar=1) }}">Mudar dados do cliente</a>{% endif %}
+</div>
+</div>
+<h2>Serviços deste cliente</h2>
+{% if not ordens %}<p>Nenhum serviço ainda.</p>{% endif %}
+<div class="lista-os">{% for o in ordens %}{% include "_cartao_os.html" %}{% endfor %}</div>
+{% endblock %}

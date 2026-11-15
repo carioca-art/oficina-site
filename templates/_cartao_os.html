@@ -1,0 +1,12 @@
+<a class="cartao-os" href="{{ url_for('ver_os', ordem_id=o.id) }}">
+  <div class="nome">{{ o.nome }}</div>
+  {% if o.telefone %}<div class="telefone">{{ o.telefone }}</div>{% endif %}
+  <div class="linha2">{{ [o.marca, o.modelo]|select|join(' ') }}{% if o.placa %}, placa {{ o.placa }}{% endif %}</div>
+  <div class="linha2">Ordem nº {{ '%04d'|format(o.id) }}, dia {{ o.data|data_br }}</div>
+  <div class="rodape">
+    <strong>{{ o.total|dinheiro }}</strong>
+    {% if o.status == 'PAGO' %}<span class="selo PAGO">Pago</span>
+    {% elif o.status == 'PARCIAL' %}<span class="selo PARCIAL">Falta {{ o.falta|dinheiro }}</span>
+    {% else %}<span class="selo PENDENTE">Não pagou</span>{% endif %}
+  </div>
+</a>

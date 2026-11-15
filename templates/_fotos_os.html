@@ -1,0 +1,43 @@
+<section id="fotos">
+<h2>Fotos</h2>
+<div id="enviando" class="aviso-ok" hidden>Enviando foto, espere um pouco...</div>
+<div id="erro-foto" class="erro" hidden></div>
+
+<div class="bloco-fotos">
+  <h3>Caminhão</h3>
+  <button type="button" class="botao escuro botao-foto" data-tipo="veiculo">Tirar foto do caminhão</button>
+  <div class="galeria">{% for f in fotos if f.tipo == 'veiculo' %}{% include "_foto_mini.html" %}{% endfor %}</div>
+</div>
+
+{% for item in os.itens %}
+<div class="bloco-fotos">
+  <h3>{{ item.descricao }}</h3>
+  <div class="grade-2">
+    <div>
+      <h4>Peça antiga</h4>
+      <button type="button" class="botao botao-foto" data-tipo="antiga" data-item="{{ item.id }}">Foto da peça antiga</button>
+      <div class="galeria">{% for f in fotos if f.item_id == item.id and f.tipo == 'antiga' %}{% include "_foto_mini.html" %}{% endfor %}</div>
+    </div>
+    <div>
+      <h4>Peça comprada</h4>
+      <button type="button" class="botao botao-foto" data-tipo="comprada" data-item="{{ item.id }}">Foto da peça comprada</button>
+      <div class="galeria">{% for f in fotos if f.item_id == item.id and f.tipo == 'comprada' %}{% include "_foto_mini.html" %}{% endfor %}</div>
+    </div>
+  </div>
+</div>
+{% else %}
+<p class="dica">Pra tirar foto de cada peça, primeiro coloque as peças na ordem, no botão "Mudar alguma coisa nesta ordem".</p>
+{% endfor %}
+
+{% set soltas = fotos|selectattr('tipo', 'ne', 'veiculo')|selectattr('item_id', 'none')|list %}
+{% if soltas %}
+<div class="bloco-fotos">
+  <h3>Outras fotos</h3>
+  <p class="dica">Fotos de peças que foram tiradas da ordem.</p>
+  <div class="galeria">{% for f in soltas %}{% include "_foto_mini.html" %}{% endfor %}</div>
+</div>
+{% endif %}
+
+<input type="file" accept="image/*" id="arquivo-foto" hidden>
+</section>
+<script src="{{ url_for('static', filename='envio_fotos.js') }}" data-envio="{{ url_for('enviar_foto', ordem_id=os.id) }}" id="script-fotos"></script>

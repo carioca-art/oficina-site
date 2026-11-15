@@ -1,0 +1,4 @@
+<a class="foto-mini" href="{{ url_for('editar_foto', foto_id=f.id) }}">
+  <img src="{{ url_for('ver_foto', foto_id=f.id, mini=1) }}" alt="Foto {{ f.id }}" loading="lazy">
+  <span>{{ f.problema or 'Toque pra marcar ou anotar' }}</span>
+</a>
